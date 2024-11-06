@@ -251,6 +251,15 @@ func TestActivations(t *testing.T) {
 			},
 		},
 		{
+			name: "Isthmus",
+			setUpgradeTime: func(t *uint64, c *Config) {
+				c.IsthmusTime = t
+			},
+			checkEnabled: func(t uint64, c *Config) bool {
+				return c.IsIsthmus(t)
+			},
+		},
+		{
 			name: "Interop",
 			setUpgradeTime: func(t *uint64, c *Config) {
 				c.InteropTime = t
@@ -518,10 +527,20 @@ func TestConfig_Check(t *testing.T) {
 				canyonTime := uint64(2)
 				deltaTime := uint64(3)
 				ecotoneTime := uint64(4)
+				fjordTime := uint64(5)
+				graniteTime := uint64(6)
+				holoceneTime := uint64(7)
+				isthmusTime := uint64(8)
+				interopTime := uint64(9)
 				cfg.RegolithTime = &regolithTime
 				cfg.CanyonTime = &canyonTime
 				cfg.DeltaTime = &deltaTime
 				cfg.EcotoneTime = &ecotoneTime
+				cfg.FjordTime = &fjordTime
+				cfg.GraniteTime = &graniteTime
+				cfg.HoloceneTime = &holoceneTime
+				cfg.IsthmusTime = &isthmusTime
+				cfg.InteropTime = &interopTime
 			},
 			expectedErr: nil,
 		},
