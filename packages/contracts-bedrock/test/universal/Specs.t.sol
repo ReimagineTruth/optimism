@@ -34,6 +34,7 @@ contract Specification_Test is CommonTest {
         SYSTEMCONFIGOWNER,
         GUARDIAN,
         DEPUTYGUARDIAN,
+        PAUSEDEPUTY,
         MESSENGER,
         L1PROXYADMINOWNER,
         GOVERNANCETOKENOWNER,
@@ -879,6 +880,18 @@ contract Specification_Test is CommonTest {
         _addSpec({ _name: "DeputyGuardianModule", _sel: _getSel("safe()") });
         _addSpec({ _name: "DeputyGuardianModule", _sel: _getSel("superchainConfig()") });
         _addSpec({ _name: "DeputyGuardianModule", _sel: _getSel("version()") });
+
+        // DeputyPauseModule
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("version()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("foundationSafe()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("deputyGuardianModule()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("superchainConfig()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("deputy()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("maxSignatureValiditySeconds()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("usedNonces(bytes32)") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("pauseMessageTypehash()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("deputyAuthMessageTypehash()") });
+        _addSpec({ _name: "DeputyPauseModule", _sel: _getSel("pause(uint256,bytes32,bytes)"), _auth: Role.PAUSEDEPUTY });
 
         // LivenessGuard
         _addSpec({ _name: "LivenessGuard", _sel: _getSel("checkAfterExecution(bytes32,bool)"), _auth: Role.COUNCILSAFE });

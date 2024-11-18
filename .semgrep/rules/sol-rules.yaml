@@ -112,6 +112,7 @@ rules:
         - packages/contracts-bedrock/scripts/interfaces/IGnosisSafe.sol
         - packages/contracts-bedrock/src/dispute/interfaces/IPermissionedDisputeGame.sol
         - packages/contracts-bedrock/src/dispute/interfaces/IFaultDisputeGame.sol
+        - packages/contracts-bedrock/src/safe/interfaces/IDeputyPauseModule.sol
 
   - id: sol-style-doc-comment
     languages: [solidity]

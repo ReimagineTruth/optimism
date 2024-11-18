@@ -183,6 +183,10 @@
     "initCodeHash": "0xd95e562f395d4eb6e332f4474dffab660ada9e9da7c79f58fb6052278e0904df",
     "sourceCodeHash": "0x45daabe094de0287e244e6fea4f1887b9adc09b07c47dc77361b1678645a1470"
   },
+  "src/safe/DeputyPauseModule.sol": {
+    "initCodeHash": "0x614650e8e774decdd31b78b3c409ab93260978e831c0627833a929fc0e3fef1f",
+    "sourceCodeHash": "0xff915d1473b93d47313039e16c7628c680eb532514b6332dfbd51f758af5e3ed"
+  },
   "src/safe/LivenessGuard.sol": {
     "initCodeHash": "0xd449cef5d62dea387f5c4fd18382f5427532c443d29b3dcf0f645dbb6756ccb4",
     "sourceCodeHash": "0x745f72d907d9a8e95b5fdfe9fd9a910456f2417c42b81b0a3a764c20c13d7ed7"
