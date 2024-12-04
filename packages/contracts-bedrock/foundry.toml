@@ -89,6 +89,19 @@ runs = 128
 depth = 512
 
 ################################################################
+#                    PROFILE: CISUPERHEAVY                     #
+################################################################
+
+[profile.cisuperheavy.fuzz]
+runs = 2000000 # 0.001% failure caught 99.999% of the time
+timeout = 3600
+
+[profile.cisuperheavy.invariant]
+runs = 2000000 # 0.001% failure caught 99.999% of the time
+depth = 2048
+timeout = 3600
+
+################################################################
 #                         PROFILE: LITE                        #
 ################################################################
 

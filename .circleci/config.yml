@@ -32,6 +32,9 @@ parameters:
   kontrol_dispatch:
     type: boolean
     default: false
+  superheavy_fuzz_dispatch:
+    type: boolean
+    default: false
   cannon_full_test_dispatch:
     type: boolean
     default: false
@@ -1320,6 +1323,13 @@ workflows:
           test_list: git diff origin/develop...HEAD --name-only --diff-filter=AM -- './test/**/*.t.sol' | sed 's|packages/contracts-bedrock/||'
           test_timeout: 1h
           test_profile: ciheavy
+      - contracts-bedrock-tests:
+          # Just seeing what happens if we do this
+          name: contracts-bedrock-tests-superheavy-fuzz
+          test_parallelism: 4
+          test_list: find test -name "*.t.sol"
+          test_timeout: 24h
+          test_profile: cisuperheavy
       - contracts-bedrock-coverage:
           filters:
             branches:
@@ -1626,6 +1636,18 @@ workflows:
           context:
             - slack
             - runtimeverification
+
+  scheduled-superheavy-fuzz-tests:
+    when:
+      or:
+        - equal: [build_daily, <<pipeline.schedule.name>>]
+        - equal: [true, << pipeline.parameters.superheavy_fuzz_dispatch >>]
+    jobs:
+      - contracts-bedrock-tests:
+          test_parallelism: 4
+          test_list: find test -name "*.t.sol"
+          test_timeout: 24h
+          test_profile: cisuperheavy
 
   scheduled-cannon-full-tests:
     when:
