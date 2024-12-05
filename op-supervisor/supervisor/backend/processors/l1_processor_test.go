@@ -32,8 +32,20 @@ func (m *mockChainsDB) LastCommonL1() (types.BlockSeal, error) {
 	return types.BlockSeal{}, nil
 }
 
+func (m *mockChainsDB) FinalizedL1() eth.BlockRef {
+	return eth.BlockRef{}
+}
+
+func (m *mockChainsDB) UpdateFinalizedL1(finalized eth.BlockRef) error {
+	return nil
+}
+
 type mockL1BlockRefByNumberFetcher struct {
 	l1BlockByNumberFn func() (eth.L1BlockRef, error)
+}
+
+func (m *mockL1BlockRefByNumberFetcher) L1BlockRefByLabel(context.Context, eth.BlockLabel) (eth.L1BlockRef, error) {
+	return eth.L1BlockRef{}, nil
 }
 
 func (m *mockL1BlockRefByNumberFetcher) L1BlockRefByNumber(context.Context, uint64) (eth.L1BlockRef, error) {

@@ -7,22 +7,27 @@ import (
 
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum-optimism/optimism/op-supervisor/supervisor/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 type chainsDB interface {
 	RecordNewL1(ref eth.BlockRef) error
 	LastCommonL1() (types.BlockSeal, error)
+	FinalizedL1() eth.BlockRef
+	UpdateFinalizedL1(finalized eth.BlockRef) error
 }
 
 type L1Source interface {
 	L1BlockRefByNumber(ctx context.Context, number uint64) (eth.L1BlockRef, error)
+	L1BlockRefByLabel(ctx context.Context, label eth.BlockLabel) (eth.L1BlockRef, error)
 }
 
 type L1Processor struct {
-	log      log.Logger
-	client   L1Source
-	clientMu sync.Mutex
+	log         log.Logger
+	client      L1Source
+	clientMu    sync.RWMutex
+	finalitySub ethereum.Subscription
 
 	currentNumber uint64
 	tickDuration  time.Duration
@@ -36,11 +41,12 @@ type L1Processor struct {
 
 func NewL1Processor(log log.Logger, cdb chainsDB, client L1Source) *L1Processor {
 	ctx, cancel := context.WithCancel(context.Background())
+	tickDuration := 6 * time.Second
 	return &L1Processor{
 		client:       client,
 		db:           cdb,
 		log:          log.New("service", "l1-processor"),
-		tickDuration: 6 * time.Second,
+		tickDuration: tickDuration,
 		ctx:          ctx,
 		cancel:       cancel,
 	}
@@ -49,7 +55,20 @@ func NewL1Processor(log log.Logger, cdb chainsDB, client L1Source) *L1Processor 
 func (p *L1Processor) AttachClient(client L1Source) {
 	p.clientMu.Lock()
 	defer p.clientMu.Unlock()
+	// unsubscribe from the old client
+	if p.finalitySub != nil {
+		p.finalitySub.Unsubscribe()
+	}
+	// make the new client the active one
 	p.client = client
+	// resubscribe to the new client
+	p.finalitySub = eth.PollBlockChanges(
+		p.log,
+		p.client,
+		p.handleFinalized,
+		eth.Finalized,
+		p.tickDuration,
+		p.tickDuration)
 }
 
 func (p *L1Processor) Start() {
@@ -61,6 +80,13 @@ func (p *L1Processor) Start() {
 	}
 	p.wg.Add(1)
 	go p.worker()
+	p.finalitySub = eth.PollBlockChanges(
+		p.log,
+		p.client,
+		p.handleFinalized,
+		eth.Finalized,
+		p.tickDuration,
+		p.tickDuration)
 }
 
 func (p *L1Processor) Stop() {
@@ -91,8 +117,8 @@ func (p *L1Processor) worker() {
 // if a new block is found, it is recorded in the database and the target number is updated
 // in the future it will also kick of derivation management for the sync nodes
 func (p *L1Processor) work() error {
-	p.clientMu.Lock()
-	defer p.clientMu.Unlock()
+	p.clientMu.RLock()
+	defer p.clientMu.RUnlock()
 	nextNumber := p.currentNumber + 1
 	ref, err := p.client.L1BlockRefByNumber(p.ctx, nextNumber)
 	if err != nil {
@@ -112,4 +138,24 @@ func (p *L1Processor) work() error {
 	// update the target number
 	p.currentNumber = nextNumber
 	return nil
+}
+
+// handleFinalized is called when a new finalized block is received from the L1 chain subscription
+// it updates the database with the new finalized block if it is newer than the current one
+func (p *L1Processor) handleFinalized(ctx context.Context, sig eth.L1BlockRef) {
+	// do something with the new block
+	p.log.Debug("Received new Finalized L1 block", "block", sig)
+	currentFinalized := p.db.FinalizedL1()
+	if currentFinalized.Number > sig.Number {
+		p.log.Warn("Finalized block in database is newer than subscribed finalized block", "current", currentFinalized, "new", sig)
+		return
+	}
+	if sig.Number > currentFinalized.Number || currentFinalized == (eth.BlockRef{}) {
+		// update the database with the new finalized block
+		if err := p.db.UpdateFinalizedL1(sig); err != nil {
+			p.log.Warn("Failed to update finalized L1", "err", err)
+			return
+		}
+		p.log.Debug("Updated finalized L1 block", "block", sig)
+	}
 }
