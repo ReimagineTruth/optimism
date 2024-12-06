@@ -18,8 +18,8 @@ import (
 )
 
 type Source interface {
-	L1BlockRefByNumber(ctx context.Context, number uint64) (eth.L1BlockRef, error)
-	FetchReceipts(ctx context.Context, blockHash common.Hash) (eth.BlockInfo, gethtypes.Receipts, error)
+	BlockRefByNumber(ctx context.Context, number uint64) (eth.BlockRef, error)
+	FetchReceipts(ctx context.Context, blockHash common.Hash) (gethtypes.Receipts, error)
 }
 
 type LogProcessor interface {
@@ -160,13 +160,7 @@ func (s *ChainProcessor) update(nextNum uint64) error {
 	}
 
 	ctx, cancel := context.WithTimeout(s.ctx, time.Second*10)
-	nextL1, err := s.client.L1BlockRefByNumber(ctx, nextNum)
-	next := eth.BlockRef{
-		Hash:       nextL1.Hash,
-		ParentHash: nextL1.ParentHash,
-		Number:     nextL1.Number,
-		Time:       nextL1.Time,
-	}
+	next, err := s.client.BlockRefByNumber(ctx, nextNum)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to fetch next block: %w", err)
@@ -174,7 +168,7 @@ func (s *ChainProcessor) update(nextNum uint64) error {
 
 	// Try and fetch the receipts
 	ctx, cancel = context.WithTimeout(s.ctx, time.Second*10)
-	_, receipts, err := s.client.FetchReceipts(ctx, next.Hash)
+	receipts, err := s.client.FetchReceipts(ctx, next.Hash)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to fetch receipts of block: %w", err)

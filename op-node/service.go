@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum-optimism/optimism/op-service/rpc"
 	"io"
 	"os"
 	"strings"
@@ -161,30 +162,13 @@ func NewL1EndpointConfig(ctx *cli.Context) *node.L1EndpointConfig {
 	}
 }
 
-func NewL2EndpointConfig(ctx *cli.Context, log log.Logger) (*node.L2EndpointConfig, error) {
+func NewL2EndpointConfig(ctx *cli.Context, logger log.Logger) (*node.L2EndpointConfig, error) {
 	l2Addr := ctx.String(flags.L2EngineAddr.Name)
 	fileName := ctx.String(flags.L2EngineJWTSecret.Name)
-	var secret [32]byte
-	fileName = strings.TrimSpace(fileName)
-	if fileName == "" {
-		return nil, fmt.Errorf("file-name of jwt secret is empty")
+	secret, err := rpc.ObtainJWTSecret(logger, fileName, true)
+	if err != nil {
+		return nil, err
 	}
-	if data, err := os.ReadFile(fileName); err == nil {
-		jwtSecret := common.FromHex(strings.TrimSpace(string(data)))
-		if len(jwtSecret) != 32 {
-			return nil, fmt.Errorf("invalid jwt secret in path %s, not 32 hex-formatted bytes", fileName)
-		}
-		copy(secret[:], jwtSecret)
-	} else {
-		log.Warn("Failed to read JWT secret from file, generating a new one now. Configure L2 geth with --authrpc.jwt-secret=" + fmt.Sprintf("%q", fileName))
-		if _, err := io.ReadFull(rand.Reader, secret[:]); err != nil {
-			return nil, fmt.Errorf("failed to generate jwt secret: %w", err)
-		}
-		if err := os.WriteFile(fileName, []byte(hexutil.Encode(secret[:])), 0o600); err != nil {
-			return nil, err
-		}
-	}
-
 	return &node.L2EndpointConfig{
 		L2EngineAddr:      l2Addr,
 		L2EngineJWTSecret: secret,
